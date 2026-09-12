@@ -163,3 +163,84 @@ class TestSemanticSearchIndex:
         assert len(results) <= 5
         assert set(results["gender"].unique()).issubset({"Women", "Unisex"})
 
+
+class TestBundlingEngine:
+    """Test suite for OutfitBundlingOptimizer, Knapsack constraint satisfaction, and Cohesion."""
+
+    @pytest.fixture(scope="module")
+    def bundling_setup(self):
+        from src.intent_parser import IntentParser, SemanticSearchIndex
+        from src.bundling_engine import OutfitBundlingOptimizer
+        catalog_df = generate_catalog(num_items=1000, seed=999)
+        search_index = SemanticSearchIndex(catalog_df)
+        parser = IntentParser()
+        optimizer = OutfitBundlingOptimizer(search_index)
+        return parser, optimizer
+
+    def test_generates_bundle_with_distinct_categories(self, bundling_setup):
+        parser, optimizer = bundling_setup
+        intent = parser.parse("cocktail party look for women under 7000")
+        bundle = optimizer.curate_bundle(intent)
+
+        assert bundle is not None
+        assert len(bundle.items) in [3, 4]
+        categories = [item["category"] for item in bundle.items]
+        # Verify no duplicate categories
+        assert len(categories) == len(set(categories))
+        assert "topwear" in categories
+        assert "bottomwear" in categories
+        assert "footwear" in categories
+
+    def test_100_percent_budget_compliance_standard(self, bundling_setup):
+        parser, optimizer = bundling_setup
+        test_budgets = [4000, 5000, 6500, 8000]
+
+        for b in test_budgets:
+            intent = parser.parse(f"summer brunch outfit under {b}")
+            bundle = optimizer.curate_bundle(intent)
+            assert bundle.total_price <= b, f"Bundle price ₹{bundle.total_price} exceeded budget ₹{b}"
+            assert bundle.is_budget_compliant is True
+
+    def test_tight_budget_fallback_behavior(self, bundling_setup):
+        parser, optimizer = bundling_setup
+        # Tight budget where 4 pieces usually exceed ₹2,500
+        intent = parser.parse("minimalist office wear under 2500")
+        bundle = optimizer.curate_bundle(intent)
+
+        assert bundle.total_price <= 2500
+        assert bundle.is_budget_compliant is True
+        # Verify fallback transparent message is set
+        assert bundle.fallback_applied is True
+        assert "2,500" in bundle.fallback_message or "limit" in bundle.fallback_message
+
+    def test_stylist_rationale_generation(self, bundling_setup):
+        parser, optimizer = bundling_setup
+        intent = parser.parse("pastel beach vacation look under 4500")
+        bundle = optimizer.curate_bundle(intent)
+
+        assert isinstance(bundle.stylist_rationale, str)
+        assert len(bundle.stylist_rationale) > 20
+        assert "beach" in bundle.stylist_rationale.lower() or "pastel" in bundle.stylist_rationale.lower()
+
+    def test_swap_item_functionality(self, bundling_setup):
+        parser, optimizer = bundling_setup
+        intent = parser.parse("casual weekend look for men under 6000")
+        bundle = optimizer.curate_bundle(intent)
+
+        # Pick topwear item to swap
+        orig_top = next(i for i in bundle.items if i["category"] == "topwear")
+        # Find an alternative topwear SKU
+        top_skus = optimizer.search_index.catalog_df[
+            (optimizer.search_index.catalog_df["category"] == "topwear") &
+            (optimizer.search_index.catalog_df["sku_id"] != orig_top["sku_id"])
+        ]
+        new_sku = top_skus.iloc[0]["sku_id"]
+
+        swapped_bundle = optimizer.swap_item(bundle, "topwear", new_sku)
+        swapped_top = next(i for i in swapped_bundle.items if i["category"] == "topwear")
+
+        assert swapped_top["sku_id"] == new_sku
+        assert swapped_top["sku_id"] != orig_top["sku_id"]
+        assert swapped_bundle.total_price == sum(i["price"] for i in swapped_bundle.items)
+
+
