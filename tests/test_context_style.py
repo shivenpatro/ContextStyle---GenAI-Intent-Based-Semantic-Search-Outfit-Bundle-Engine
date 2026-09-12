@@ -295,4 +295,19 @@ class TestAnalyticsSimulator:
         assert conv_stats["rate_difference_pct_points"] > 0.8
 
 
+class TestAppIntegration:
+    """Test suite ensuring app dependencies and components load cleanly."""
+
+    def test_app_imports_and_engine_initialization(self):
+        import app.main as app_main
+        catalog_df, search_index, intent_parser, optimizer, impact_model, ab_simulator = app_main.get_catalog_and_engine()
+        assert len(catalog_df) == 2500
+        assert search_index is not None
+        assert intent_parser is not None
+        assert optimizer is not None
+        assert impact_model is not None
+        assert ab_simulator is not None
+
+
+
 
