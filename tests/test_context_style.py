@@ -67,3 +67,99 @@ class TestCatalogPipeline:
 
         loaded_csv = load_catalog(saved["csv"])
         assert len(loaded_csv) == len(catalog_df)
+
+
+class TestIntentParser:
+    """Test suite for Natural Language Intent Parser across 8 conversational query variations."""
+
+    @pytest.fixture(scope="module")
+    def parser(self):
+        from src.intent_parser import IntentParser
+        return IntentParser()
+
+    def test_query_1_monsoon_brunch_pastel(self, parser):
+        query = "monsoon brunch pastel casual look under ₹3500"
+        parsed = parser.parse(query)
+        assert parsed.budget_max == 3500.0
+        assert parsed.target_occasion == "Casual"
+        assert "pastel" in parsed.style_vibes
+        assert parsed.gender == "Unisex"
+
+    def test_query_2_corporate_dinner_men(self, parser):
+        query = "smart casual attire for corporate dinner in Delhi for men budget 4500"
+        parsed = parser.parse(query)
+        assert parsed.budget_max == 4500.0
+        assert parsed.gender == "Men"
+        assert parsed.target_occasion in ["Formal", "Party"]
+        assert "smart casual" in parsed.style_vibes
+
+    def test_query_3_cocktail_party_women_4k(self, parser):
+        query = "cocktail party look for women under 4k"
+        parsed = parser.parse(query)
+        assert parsed.budget_max == 4000.0
+        assert parsed.gender == "Women"
+        assert parsed.target_occasion == "Party"
+
+    def test_query_4_minimalist_office_guys_below_3000(self, parser):
+        query = "minimalist Friday office wear for guys below 3000"
+        parsed = parser.parse(query)
+        assert parsed.budget_max == 3000.0
+        assert parsed.gender == "Men"
+        assert parsed.target_occasion == "Formal"
+        assert "minimalist" in parsed.style_vibes
+
+    def test_query_5_goa_beach_girls_under_5000(self, parser):
+        query = "Goa beach party vacation vibe for girls under 5000"
+        parsed = parser.parse(query)
+        assert parsed.budget_max == 5000.0
+        assert parsed.gender == "Women"
+        assert parsed.target_occasion in ["Beach", "Party"]
+
+    def test_query_6_festive_diwali_max_6000(self, parser):
+        query = "festive Diwali ethnic kurta set max 6000"
+        parsed = parser.parse(query)
+        assert parsed.budget_max == 6000.0
+        assert parsed.target_occasion == "Ethnic"
+
+    def test_query_7_streetwear_oversized_under_2500(self, parser):
+        query = "streetwear oversized black outfit under 2500 rs"
+        parsed = parser.parse(query)
+        assert parsed.budget_max == 2500.0
+        assert "streetwear" in parsed.style_vibes
+        assert "oversized" in parsed.style_vibes
+        assert "black" in parsed.colors
+
+    def test_query_8_default_budget_and_gym_men(self, parser):
+        query = "running gym athleisure set for men"
+        parsed = parser.parse(query)
+        assert parsed.budget_max == 5000.0  # default fallback
+        assert parsed.gender == "Men"
+        assert parsed.target_occasion == "Gym"
+
+
+class TestSemanticSearchIndex:
+    """Test suite for TF-IDF Semantic Search Index."""
+
+    @pytest.fixture(scope="module")
+    def search_index(self):
+        from src.intent_parser import SemanticSearchIndex
+        catalog_df = generate_catalog(num_items=500, seed=123)
+        return SemanticSearchIndex(catalog_df)
+
+    def test_search_top_k_and_columns(self, search_index):
+        results = search_index.search("linen pastel summer shirt", top_k=10)
+        assert len(results) == 10
+        assert "relevance_score" in results.columns
+        assert (results["relevance_score"] >= 0.0).all()
+        assert (results["relevance_score"] <= 1.0).all()
+
+    def test_category_filtering(self, search_index):
+        results = search_index.search("casual sneakers", category="footwear", top_k=5)
+        assert len(results) == 5
+        assert (results["category"] == "footwear").all()
+
+    def test_gender_filtering(self, search_index):
+        results = search_index.search("formal office shirt", category="topwear", gender="Women", top_k=5)
+        assert len(results) <= 5
+        assert set(results["gender"].unique()).issubset({"Women", "Unisex"})
+
