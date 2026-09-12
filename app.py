@@ -11,6 +11,17 @@ import plotly.express as px
 import plotly.graph_objects as go
 import gradio as gr
 
+
+try:
+    import spaces
+    @spaces.GPU
+    def _zerogpu_accelerate():
+        """ZeroGPU initialization handshake."""
+        return True
+except Exception:
+    def _zerogpu_accelerate():
+        return False
+
 # Ensure root directory is in sys.path
 ROOT_DIR = Path(__file__).resolve().parent
 if str(ROOT_DIR) not in sys.path:
