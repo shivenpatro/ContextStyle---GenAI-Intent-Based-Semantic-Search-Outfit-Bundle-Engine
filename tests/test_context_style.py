@@ -244,3 +244,55 @@ class TestBundlingEngine:
         assert swapped_bundle.total_price == sum(i["price"] for i in swapped_bundle.items)
 
 
+class TestAnalyticsSimulator:
+    """Test suite for Commercial Impact Model and A/B Testing Simulator."""
+
+    @pytest.fixture(scope="module")
+    def impact_model(self):
+        from src.analytics_simulator import CommercialImpactModel
+        return CommercialImpactModel()
+
+    @pytest.fixture(scope="module")
+    def ab_simulator(self, impact_model):
+        from src.analytics_simulator import ABExperimentSimulator
+        return ABExperimentSimulator(impact_model)
+
+    def test_annual_commercial_impact_calculations(self, impact_model):
+        impact = impact_model.calculate_annual_impact(monthly_search_sessions=250000)
+
+        assert impact["annual_gmv_uplift"] > 0
+        assert impact["annual_gmv_lift_pct"] > 0
+        assert impact["aov_absolute_lift"] == 2480.0 - 1850.0
+        assert impact["aov_lift_pct"] > 30.0
+        assert impact["annual_additional_units"] > 0
+        assert impact["recovered_monthly_sessions"] > 0
+        assert impact["abandonment_drop_pct_points"] > 15.0
+
+    def test_ab_experiment_simulation_structure(self, ab_simulator):
+        exp_results = ab_simulator.simulate_30_day_experiment(daily_traffic=10000, seed=42)
+
+        daily_df = exp_results["daily_df"]
+        assert len(daily_df) == 30
+        assert "control_aov" in daily_df.columns
+        assert "variant_aov" in daily_df.columns
+        assert "variant_bundle_adoption_rate" in daily_df.columns
+
+    def test_ab_experiment_statistical_significance(self, ab_simulator):
+        exp_results = ab_simulator.simulate_30_day_experiment(daily_traffic=10000, seed=42)
+
+        # AOV Welch's t-test
+        aov_stats = exp_results["aov_hypothesis_test"]
+        assert aov_stats["p_value"] < 0.001
+        assert aov_stats["statistically_significant"] is True
+        assert aov_stats["ci_95_lower"] < aov_stats["ci_95_upper"]
+        assert aov_stats["mean_difference"] > 400
+
+        # Conversion Z-test
+        conv_stats = exp_results["conversion_hypothesis_test"]
+        assert conv_stats["p_value"] < 0.001
+        assert conv_stats["statistically_significant"] is True
+        assert conv_stats["ci_95_lower"] < conv_stats["ci_95_upper"]
+        assert conv_stats["rate_difference_pct_points"] > 0.8
+
+
+
