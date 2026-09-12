@@ -1,3 +1,15 @@
+---
+title: ContextStyle - GenAI Intent-Based Semantic Search & Outfit Bundling Engine
+emoji: 🛍️
+colorFrom: pink
+colorTo: red
+sdk: gradio
+sdk_version: 6.27.0
+app_file: app.py
+pinned: false
+license: mit
+---
+
 # ContextStyle: GenAI Intent-Based Semantic Search & Outfit Bundling Engine
 ### *Myntra Storefront CX Portfolio Showcase | Personalisation, Search & Growth Track*
 
