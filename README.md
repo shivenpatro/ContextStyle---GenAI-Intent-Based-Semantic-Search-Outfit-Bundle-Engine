@@ -3,9 +3,16 @@
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.35%2B-FF4B4B?logo=streamlit)
+![Gradio](https://img.shields.io/badge/Gradio-6.0%2B-orange?logo=gradio)
 ![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.3%2B-F7931E?logo=scikit-learn)
 ![Pytest](https://img.shields.io/badge/Pytest-Passing-brightgreen?logo=pytest)
+![ZeroGPU](https://img.shields.io/badge/ZeroGPU-Live-green?logo=nvidia)
 ![License](https://img.shields.io/badge/License-MIT-green)
+
+[![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Live%20Demo%20(ZeroGPU)-FFD21E?style=for-the-badge)](https://huggingface.co/spaces/Falcon143/ContextStyle-AI-Stylist)
+
+> 🚀 **Live Demo on Hugging Face Spaces:** [https://huggingface.co/spaces/Falcon143/ContextStyle-AI-Stylist](https://huggingface.co/spaces/Falcon143/ContextStyle-AI-Stylist)  
+> 🌐 **Direct Fullscreen Web App:** [https://falcon143-contextstyle-ai-stylist.hf.space](https://falcon143-contextstyle-ai-stylist.hf.space)
 
 ---
 
@@ -147,14 +154,21 @@ python src/catalog_pipeline.py
 python -m pytest tests/ -v
 ```
 
-### 5. Launch Interactive Storefront Application
-```bash
-streamlit run app/main.py
-```
-Open your browser at `http://localhost:8501` to explore:
-- **Customer View**: AI Stylist natural language search, prompt pills, 1-click add to bag, and item swapping.
-- **PM View**: Real-time GMV calculators, 30-day simulated A/B testing dashboard, AOV confidence bands, and intent heatmaps.
-- **PRD View**: Complete technical specifications and architectural documentation.
+### 5. Launch Interactive Applications
+* **Streamlit Storefront (Myntra UX Showcase)**:
+  ```bash
+  streamlit run app/main.py
+  ```
+  Open `http://localhost:8501` to explore:
+  - **Customer View**: AI Stylist natural language search, prompt pills, 1-click add to bag, and item swapping.
+  - **PM View**: Real-time GMV calculators, 30-day simulated A/B testing dashboard, AOV confidence bands, and intent heatmaps.
+  - **PRD View**: Complete technical specifications and architectural documentation.
+
+* **Gradio Web Interface (Hugging Face Spaces Native)**:
+  ```bash
+  python app.py
+  ```
+  Or access the live deployment directly on Hugging Face Spaces: [https://huggingface.co/spaces/Falcon143/ContextStyle-AI-Stylist](https://huggingface.co/spaces/Falcon143/ContextStyle-AI-Stylist)
 
 ---
 
